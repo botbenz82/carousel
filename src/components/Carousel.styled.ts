@@ -6,14 +6,13 @@ export const CarouselContainer = styled.div`
   width: 100%;
 `;
 
-export const CarouselTrack = styled.div`
+export const CarouselTrack = styled.div<{visibleItems: number}>`
   display: flex;
-  transition: 0.3s;
+  transition: transform 0.3s ease-in-out;
 `;
 
-export const CarouselItem = styled.div`
-  flex: 0 0 auto;
-  width: 100%;
+export const CarouselItem = styled.div<{visibleItems: number}>`
+  flex: 0 0 ${({ visibleItems }: { visibleItems: number }) => 100 / visibleItems}%;
 `;
 
 export const CarouselButton = styled.button`
