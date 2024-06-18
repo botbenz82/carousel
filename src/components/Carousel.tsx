@@ -69,11 +69,9 @@ const Carousel: React.FC<CarouselProps> = ({
   };
 
   const handlePrev = () => {
-    if (!isTransitioning) {
-      if (isInfinite || currentIndex > 0) {
-        setIsTransitioning(true);
-        setCurrentIndex((prevIndex) => prevIndex - 1);
-      }
+    if (isInfinite || currentIndex > 0) {
+      setIsTransitioning(true);
+      setCurrentIndex((prevIndex) => prevIndex - 1);
     }
   };
 
