@@ -19,8 +19,9 @@ const Carousel: React.FC<CarouselProps> = ({
   children,
   visibleItems = 3,
 }) => {
+  const assistCount = 5;
   const [currentIndex, setCurrentIndex] = useState<number>(
-    isInfinite ? children.length : 0
+    isInfinite ? children.length * assistCount : 0
   );
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [dragging, setDragging] = useState<boolean>(false);
@@ -29,31 +30,23 @@ const Carousel: React.FC<CarouselProps> = ({
 
   const totalSlides = children.length;
   const transitionDuration = 1000;
-  const maxSpeed = Math.floor(totalSlides / 2);
+  const maxSpeed = 10;
 
   useEffect(() => {
     setWidth(trackRef.current?.offsetWidth || 0);
   }, []);
 
   useEffect(() => {
-    if (isTransitioning) {
-      if (currentIndex === 0) {
-        const timer = setTimeout(() => {
-          setIsTransitioning(false);
-          setCurrentIndex(totalSlides);
-        }, transitionDuration);
-        return () => clearTimeout(timer);
-      } else if (currentIndex === totalSlides * 2) {
-        const timer = setTimeout(() => {
-          setIsTransitioning(false);
-          setCurrentIndex(totalSlides);
-        }, transitionDuration);
-        return () => clearTimeout(timer);
-      }
-    } else {
+    if (!isTransitioning) {
       setCurrentIndex(
         isInfinite
-          ? (currentIndex % totalSlides) + totalSlides
+          ? (currentIndex % totalSlides) + totalSlides * assistCount
+          : currentIndex % totalSlides
+      );
+    }{
+      currentIndex < totalSlides && setCurrentIndex(
+        isInfinite
+          ? (currentIndex % totalSlides) + totalSlides * assistCount
           : currentIndex % totalSlides
       );
     }
@@ -126,44 +119,41 @@ const Carousel: React.FC<CarouselProps> = ({
     }
   }, [dragging, translateX, isTransitioning, transitionDuration]);
 
+  const renderItems = (items: ReactNode[], keyPrefix: string) => {
+    return items.map((child, index) => (
+      <CarouselItem
+        visibleitems={visibleItems}
+        key={`${keyPrefix}-${index}`}
+        style={{ minWidth: `${100 / visibleItems}%` }}
+      >
+        {child}
+      </CarouselItem>
+    ));
+  };
+
+  const multiItems = (count: number, dir?: string) => {
+    const arr = new Array(count).fill(1);
+    return arr.map((e, i) =>
+      renderItems(children, `clone-${dir || "preve"}` + i)
+    );
+  };
+
   return (
     <CarouselContainer>
       <PrevButton onClick={handlePrev}>Prev</PrevButton>
       <CarouselTrack
-        visibleItems={visibleItems}
+        visibleitems={visibleItems}
         ref={trackRef}
+        transitionduration={transitionDuration}
         onTransitionEnd={handleTransitionEnd}
         {...bind()}
       >
+        {isInfinite && multiItems(assistCount, "preve")}
+        {renderItems(children, "main")}
+        {isInfinite && renderItems(children, "clone-next")}
         {isInfinite &&
-          children.map((child, index) => (
-            <CarouselItem
-              visibleItems={visibleItems}
-              key={`clone-prev-${index}`}
-              style={{ minWidth: `${100 / visibleItems}%` }}
-            >
-              {child}
-            </CarouselItem>
-          ))}
-        {children.map((child, index) => (
-          <CarouselItem
-            visibleItems={visibleItems}
-            key={index}
-            style={{ minWidth: `${100 / visibleItems}%` }}
-          >
-            {child}
-          </CarouselItem>
-        ))}
-        {isInfinite &&
-          children.map((child, index) => (
-            <CarouselItem
-              visibleItems={visibleItems}
-              key={`clone-next-${index}`}
-              style={{ minWidth: `${100 / visibleItems}%` }}
-            >
-              {child}
-            </CarouselItem>
-          ))}
+          currentIndex > totalSlides * (assistCount + 1) &&
+          multiItems(Math.floor(currentIndex / totalSlides - assistCount) + 1, "next")}
       </CarouselTrack>
       <NextButton onClick={handleNext}>Next</NextButton>
     </CarouselContainer>

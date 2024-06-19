@@ -6,13 +6,13 @@ export const CarouselContainer = styled.div`
   width: 100%;
 `;
 
-export const CarouselTrack = styled.div<{visibleItems: number}>`
+export const CarouselTrack = styled.div<{visibleitems: number, transitionduration: number}>`
   display: flex;
-  transition: transform 0.3s ease-in-out;
+  transition: transform ${({ transitionduration }: { transitionduration: number }) => transitionduration}ms cubic-bezier(0, 0, 0, 1) 0s;
 `;
 
-export const CarouselItem = styled.div<{visibleItems: number}>`
-  flex: 0 0 ${({ visibleItems }: { visibleItems: number }) => 100 / visibleItems}%;
+export const CarouselItem = styled.div<{visibleitems: number}>`
+  flex: 0 0 ${({ visibleitems }: { visibleitems: number }) => 100 / visibleitems}%;
 `;
 
 export const CarouselButton = styled.button`
