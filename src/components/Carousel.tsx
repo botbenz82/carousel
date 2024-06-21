@@ -111,7 +111,7 @@ const Carousel: React.FC<CarouselProps> = ({
           : 0;
         const calculatedDistance =
           -(newIndex - currentIndex + mouseMovedCards) *
-            (width / visibleItems) +
+          (width / visibleItems) +
           mx -
           mouseMovedCards * cardWidth;
         setDistance(calculatedDistance);
