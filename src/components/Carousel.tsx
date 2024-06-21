@@ -49,13 +49,6 @@ const Carousel: React.FC<CarouselProps> = ({
           ? (currentIndex % totalSlides) + totalSlides * assistCount
           : currentIndex % totalSlides
       );
-    } else {
-      // currentIndex < totalSlides &&
-      //   setCurrentIndex(
-      //     isInfinite
-      //       ? (currentIndex % totalSlides) + totalSlides * assistCount
-      //       : currentIndex % totalSlides
-      //   );
     }
   }, [currentIndex, isTransitioning, totalSlides, transitionDuration]);
 
@@ -96,7 +89,6 @@ const Carousel: React.FC<CarouselProps> = ({
           Math.round(mx / (width / visibleItems)) -
           slideJump * (xDir > 0 ? 1 : -1);
         // Calculate the count of card from the remaining distance
-
         if (!isInfinite) {
           if (newIndex < 0) {
             newIndex = 0;
@@ -158,22 +150,12 @@ const Carousel: React.FC<CarouselProps> = ({
             trackRef.current.style.transform = `translateX(${currentX}px)`;
             const diff = Math.round(currentX) % Math.round(cardWidth);
             console.log("transition mouse down", { diff, currentX, remainDistance, translateX });
-
-            // let remainingCount = Math.round(
-            //   (remainingDistance / width) * visibleItems
-            // );
-
-            // let remain =
-            //   remainingDistance - (remainingCount * width) / visibleItems;
-            // let newIndex = currentIndex + remainingCount;
             let newIndex =
               currentX < 0 ? Math.abs(Math.round(currentX / cardWidth)) : 0;
 
             setDistance(0);
             setCurrentIndex(newIndex);
             setDiff(diff);
-            // setRemainingDistance(diff);
-            // setIsTransitioning(false);
           }
         }
       }
