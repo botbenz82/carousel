@@ -28,9 +28,15 @@ const Carousel: React.FC<CarouselProps> = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number>(0);
 
+  const [remainingDistance, setRemainingDistance] = useState<number>(0);
+  const [diff, setDiff] = useState<number>(0);
+  const [distance, setDistance] = useState<number>(0);
+  const [lastTime, setLastTime] = useState<number>(new Date().getTime());
+
   const totalSlides = children.length;
   const transitionDuration = 1000;
   const maxSpeed = 10;
+  const cardWidth = width / visibleItems;
 
   useEffect(() => {
     setWidth(trackRef.current?.offsetWidth || 0);
@@ -43,12 +49,13 @@ const Carousel: React.FC<CarouselProps> = ({
           ? (currentIndex % totalSlides) + totalSlides * assistCount
           : currentIndex % totalSlides
       );
-    }{
-      currentIndex < totalSlides && setCurrentIndex(
-        isInfinite
-          ? (currentIndex % totalSlides) + totalSlides * assistCount
-          : currentIndex % totalSlides
-      );
+    } else {
+      // currentIndex < totalSlides &&
+      //   setCurrentIndex(
+      //     isInfinite
+      //       ? (currentIndex % totalSlides) + totalSlides * assistCount
+      //       : currentIndex % totalSlides
+      //   );
     }
   }, [currentIndex, isTransitioning, totalSlides, transitionDuration]);
 
@@ -78,14 +85,17 @@ const Carousel: React.FC<CarouselProps> = ({
   const bind = useDrag(
     ({ down, movement: [mx], velocity, direction: [xDir] }) => {
       if (!down) {
+        //mouse released
         const slideJump = Math.min(
           maxSpeed,
           Math.round(Math.abs(mx / (width / visibleItems)) * velocity)
         );
+
         let newIndex =
           currentIndex -
           Math.round(mx / (width / visibleItems)) -
           slideJump * (xDir > 0 ? 1 : -1);
+        // Calculate the count of card from the remaining distance
 
         if (!isInfinite) {
           if (newIndex < 0) {
@@ -95,13 +105,76 @@ const Carousel: React.FC<CarouselProps> = ({
           }
         }
 
+        // setDistance(-(newIndex - currentIndex) * (width / visibleItems) + mx);
+        const mouseMovedCards = isInfinite
+          ? Math.round((mx / width) * visibleItems)
+          : 0;
+        const calculatedDistance =
+          -(newIndex - currentIndex + mouseMovedCards) *
+            (width / visibleItems) +
+          mx -
+          mouseMovedCards * cardWidth;
+        setDistance(calculatedDistance);
+        setLastTime(new Date().getTime());
         setCurrentIndex(newIndex);
         setIsTransitioning(true);
+        setDiff(0);
+        console.log("mouse released", {
+          mx,
+          mouseMovedCards,
+          newIndex,
+          currentIndex,
+          calculatedDistance,
+        });
       } else {
-        const translateX = -currentIndex * (width / visibleItems) + mx;
-        if (trackRef.current) {
-          trackRef.current.style.transition = "none";
-          trackRef.current.style.transform = `translateX(${translateX}px)`;
+        // Pressing
+        if (!isTransitioning) {
+          // After finishing animation, pressing
+          const translateX = -currentIndex * cardWidth + mx;
+          if (trackRef.current) {
+            trackRef.current.style.transition = "none";
+            trackRef.current.style.transform = `translateX(${translateX}px)`;
+            console.log("!istransitioning", `translateX(${translateX}px)`)
+          }
+        } else if (!dragging) {
+          if (trackRef.current) {
+            trackRef.current.style.transition = "none";
+            // Calculate the current position when the mouse is pressed during the transition
+            const delayRunning = 0; // It is different between click time and disply time
+            const time =
+              (new Date().getTime() - lastTime + delayRunning) / 1000;
+            if (time >= 1) {
+              // If the elapsed time is more than 1 second, return
+              setRemainingDistance(0);
+              setDiff(0);
+              setDistance(0);
+              return;
+            }
+            // Calculate the remaining distance (the distance the card moves) according to the linear relationship
+            const translateX = -(currentIndex * cardWidth);
+            const remainDistance =
+              distance * time * time - 2 * distance * time + distance;
+            const currentX = translateX + remainDistance;
+            trackRef.current.style.transform = `translateX(${currentX}px)`;
+            const diff = Math.round(currentX) % Math.round(cardWidth);
+            console.log("transition mouse down", { diff, currentX, remainDistance, translateX });
+
+            // let remainingCount = Math.round(
+            //   (remainingDistance / width) * visibleItems
+            // );
+
+            // let remain =
+            //   remainingDistance - (remainingCount * width) / visibleItems;
+            // let newIndex = currentIndex + remainingCount;
+            let newIndex =
+              currentX < 0 ? Math.abs(Math.round(currentX / cardWidth)) : 0;
+
+            setDistance(0);
+            setCurrentIndex(newIndex);
+            setDiff(diff);
+            // setRemainingDistance(diff);
+            // setIsTransitioning(false);
+          }
         }
       }
       setDragging(down);
@@ -109,13 +182,15 @@ const Carousel: React.FC<CarouselProps> = ({
   );
 
   const translateX = -(currentIndex * (width / visibleItems));
+  console.log({ currentIndex, distance, remainingDistance, translateX });
 
   useEffect(() => {
     if (!dragging && trackRef.current) {
       trackRef.current.style.transition = isTransitioning
-        ? `${transitionDuration}ms`
+        ? `transform ${transitionDuration}ms linear 0s`
         : "none";
       trackRef.current.style.transform = `translateX(${translateX}px)`;
+      console.log("translateX", `translateX(${translateX}px)`)
     }
   }, [dragging, translateX, isTransitioning, transitionDuration]);
 
@@ -134,7 +209,7 @@ const Carousel: React.FC<CarouselProps> = ({
   const multiItems = (count: number, dir?: string) => {
     const arr = new Array(count).fill(1);
     return arr.map((e, i) =>
-      renderItems(children, `clone-${dir || "preve"}` + i)
+      renderItems(children, `clone-${dir || "prev"}` + i)
     );
   };
 
@@ -148,12 +223,15 @@ const Carousel: React.FC<CarouselProps> = ({
         onTransitionEnd={handleTransitionEnd}
         {...bind()}
       >
-        {isInfinite && multiItems(assistCount, "preve")}
+        {isInfinite && multiItems(assistCount, "prev")}
         {renderItems(children, "main")}
-        {isInfinite && renderItems(children, "clone-next")}
+        {isInfinite && renderItems(children, "next")}
         {isInfinite &&
           currentIndex > totalSlides * (assistCount + 1) &&
-          multiItems(Math.floor(currentIndex / totalSlides - assistCount) + 1, "next")}
+          multiItems(
+            Math.floor(currentIndex / totalSlides - assistCount) + 1,
+            "next"
+          )}
       </CarouselTrack>
       <NextButton onClick={handleNext}>Next</NextButton>
     </CarouselContainer>

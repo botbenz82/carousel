@@ -8,7 +8,8 @@ export const CarouselContainer = styled.div`
 
 export const CarouselTrack = styled.div<{visibleitems: number, transitionduration: number}>`
   display: flex;
-  transition: transform ${({ transitionduration }: { transitionduration: number }) => transitionduration}ms cubic-bezier(0, 0, 0, 1) 0s;
+  transition: transform ${({ transitionduration }: { transitionduration: number }) => transitionduration}ms linear 0s;
+  transition-timing-function: cubic-bezier(0, 0, 0, 1) !important;
 `;
 
 export const CarouselItem = styled.div<{visibleitems: number}>`
